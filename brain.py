@@ -5,9 +5,9 @@ import os
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
+from langchain_community.chat_message_histories import RedisChatMessageHistory
 load_dotenv()
-
+REDIS_URL = os.getenv("REDIS_URL")
 llm = OllamaLLM(model="llama3.2:3b")
 
 embeddings = OllamaEmbeddings(model="llama3.2:3b")
@@ -21,9 +21,11 @@ def get_vectorstore():
     return PineconeVectorStore(index_name=index_name,embedding=embeddings)
 
 def get_session_history(session_id: str):
-    if session_id not in store:
-        store[session_id] = ChatMessageHistory()
-    return store[session_id]
+    return RedisChatMessageHistory(
+        session_id=session_id,
+        url=REDIS_URL,
+        ttl=3600
+    )
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are Nexus v2. Use the provided context to answer. If you don't know, say so."),
